@@ -21,12 +21,19 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 def home():
     return jsonify({'message': 'Welcome to the GreenCount API!'})
 
-# Add new data to Supabase
 @app.route('/add', methods=['POST'])
 def add_data():
     data = request.get_json()
-    response = supabase.table('test_table').insert(data).execute()
-    return jsonify(response.data), 201
+
+    # Check if data has required fields
+    if all(key in data for key in ('id', 'name', 'value')):
+        try:
+            response = supabase.table('test_table').insert(data).execute()
+            return jsonify(response.data), 201
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+    else:
+        return jsonify({"error": "Missing required fields"}), 400
 
 # Get all data from Supabase
 @app.route('/get', methods=['GET'])
