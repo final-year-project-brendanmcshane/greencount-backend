@@ -1,7 +1,7 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from supabase import create_client, Client
-from dotenv import load_dotenv  # To load the .env file
+from dotenv import load_dotenv
 import os
 
 # Load environment variables from .env file
@@ -21,19 +21,21 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 def home():
     return jsonify({'message': 'Welcome to the GreenCount API!'})
 
+# Add new data to Supabase with validation
 @app.route('/add', methods=['POST'])
 def add_data():
     data = request.get_json()
+    
+    # Validate the fields
+    if 'Name' not in data or not isinstance(data['Name'], str) or data['Name'].strip() == '':
+        return jsonify({"error": "Invalid or missing 'Name' field. It should be a non-empty string."}), 400
+    if 'Value' not in data or not isinstance(data['Value'], (int, float)):
+        return jsonify({"error": "Invalid or missing 'Value' field. It should be a number."}), 400
+    
+    # Insert into Supabase if validation passes
+    response = supabase.table('test_table').insert(data).execute()
+    return jsonify(response.data), 201
 
-    # Check if data has required fields
-    if all(key in data for key in ('id', 'name', 'value')):
-        try:
-            response = supabase.table('test_table').insert(data).execute()
-            return jsonify(response.data), 201
-        except Exception as e:
-            return jsonify({"error": str(e)}), 500
-    else:
-        return jsonify({"error": "Missing required fields"}), 400
 
 # Get all data from Supabase
 @app.route('/get', methods=['GET'])
