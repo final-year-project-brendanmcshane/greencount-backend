@@ -21,20 +21,22 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 def home():
     return jsonify({'message': 'Welcome to the GreenCount API!'})
 
-# Add new data to Supabase with validation
 @app.route('/add', methods=['POST'])
 def add_data():
     data = request.get_json()
     
     # Validate the fields
-    if 'Name' not in data or not isinstance(data['Name'], str) or data['Name'].strip() == '':
-        return jsonify({"error": "Invalid or missing 'Name' field. It should be a non-empty string."}), 400
+    if 'Metric' not in data or not isinstance(data['Metric'], str) or data['Metric'].strip() == '':
+        return jsonify({"error": "Invalid or missing 'Metric' field. It should be a non-empty string."}), 400
+    if 'Unit' not in data or not isinstance(data['Unit'], str) or data['Unit'].strip() == '':
+        return jsonify({"error": "Invalid or missing 'Unit' field. It should be a non-empty string."}), 400
     if 'Value' not in data or not isinstance(data['Value'], (int, float)):
         return jsonify({"error": "Invalid or missing 'Value' field. It should be a number."}), 400
     
-    # Insert into Supabase if validation passes
+    # Insert into Supabase
     response = supabase.table('test_table').insert(data).execute()
     return jsonify(response.data), 201
+
 
 
 # Get all data from Supabase
