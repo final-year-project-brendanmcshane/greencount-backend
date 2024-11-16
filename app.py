@@ -25,7 +25,7 @@ def home():
 def add_data():
     data = request.get_json()
     
-    # Validate the fields
+    # Validate fields
     if 'Metric' not in data or not isinstance(data['Metric'], str) or data['Metric'].strip() == '':
         return jsonify({"error": "Invalid or missing 'Metric' field. It should be a non-empty string."}), 400
     if 'Unit' not in data or not isinstance(data['Unit'], str) or data['Unit'].strip() == '':
@@ -33,9 +33,10 @@ def add_data():
     if 'Value' not in data or not isinstance(data['Value'], (int, float)):
         return jsonify({"error": "Invalid or missing 'Value' field. It should be a number."}), 400
     
-    # Insert into Supabase
+    # Insert data
     response = supabase.table('test_table').insert(data).execute()
     return jsonify(response.data), 201
+
 
 
 
