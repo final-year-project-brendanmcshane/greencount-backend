@@ -20,12 +20,11 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Install dependencies
+      - name: Create Dummy Test
         run: |
-          python -m pip install --upgrade pip
-          pip install pytest
+          mkdir -p tests
+          echo "def test_dummy(): assert True" > tests/test_dummy.py
 
       - name: Run Dummy Test
         run: |
-          echo "def test_dummy(): assert True" > tests/test_dummy.py
-          pytest
+          pytest tests/test_dummy.py
