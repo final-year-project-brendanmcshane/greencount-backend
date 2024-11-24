@@ -37,14 +37,32 @@ def add_data():
     response = supabase.table('test_table').insert(data).execute()
     return jsonify(response.data), 201
 
-
-
-
-# Get all data from Supabase
 @app.route('/get', methods=['GET'])
 def get_data():
     response = supabase.table('test_table').select('*').execute()
     return jsonify(response.data), 200
+
+@app.route('/summarize', methods=['GET'])
+def summarize_data():
+    metric = request.args.get('metric')
+    if not metric:
+        return jsonify({"error": "Metric parameter is required"}), 400
+    
+    response = supabase.table('test_table').select('*').execute()
+    records = response.data
+    
+    # Filter and summarize
+    filtered = [record for record in records if record['Metric'] == metric]
+    total = sum(record['Value'] for record in filtered)
+    count = len(filtered)
+    average = total / count if count > 0 else 0
+
+    return jsonify({
+        "metric": metric,
+        "total": total,
+        "average": average,
+        "count": count
+    }), 200
 
 if __name__ == '__main__':
     app.run(debug=True)
