@@ -26,9 +26,65 @@ CONVERSION_RATES = {
     'electricity_to_mwh': 0.001  # Explicit conversion for 'electricity' to 'mwh'
 }
 
-@app.route('/')
-def home():
-    return jsonify({'message': 'Welcome to the GreenCount API!'})
+# Carbon intensity data (tons of CO2 per MWh for various energy sources)
+CARBON_INTENSITY = {
+    'coal': 0.9,  # 0.9 tons of CO2 per MWh
+    'natural_gas': 0.4,  # 0.4 tons of CO2 per MWh
+    'wind': 0,  # 0 tons of CO2 per MWh (renewable)
+    'solar': 0,  # 0 tons of CO2 per MWh (renewable)
+}
+
+@app.route('/convert', methods=['POST'])
+def convert_data():
+    data = request.get_json()
+    print(f"Received payload: {data}")  # Log the received payload
+
+    # Validate 'Metric'
+    if 'Metric' not in data or not isinstance(data['Metric'], str) or data['Metric'].strip() == '':
+        return jsonify({"error": "Invalid or missing 'Metric' field"}), 400
+
+    # Validate 'Value'
+    if 'Value' not in data or not isinstance(data['Value'], (int, float)) or data['Value'] <= 0:
+        return jsonify({"error": "Invalid or missing 'Value' field"}), 400
+
+    # Validate 'TargetUnit'
+    if 'TargetUnit' not in data or not isinstance(data['TargetUnit'], str) or data['TargetUnit'].strip() == '':
+        return jsonify({"error": "Invalid or missing 'TargetUnit' field"}), 400
+
+    # Normalize and extract inputs
+    metric = data['Metric'].strip().lower()  # Normalize to lowercase
+    value = data['Value']
+    target_unit = data['TargetUnit'].strip().lower()  # Normalize to lowercase
+
+    # Construct conversion key
+    conversion_key = f"{metric}_to_{target_unit}"
+    print(f"Generated conversion_key: {conversion_key}")
+
+    # Lookup conversion rate
+    conversion_rate = CONVERSION_RATES.get(conversion_key)
+    if conversion_rate is None:
+        print(f"Error: Conversion rate not found for key: {conversion_key}")
+        return jsonify({"error": f"Unsupported conversion: {conversion_key}"}), 400
+
+    # Perform conversion
+    converted_value = value * conversion_rate
+    print(f"Conversion successful. Original: {value}, Converted: {converted_value}")
+
+    # Calculate CO2 emissions if the metric is energy consumption
+    if metric in CARBON_INTENSITY:
+        carbon_intensity = CARBON_INTENSITY[metric]
+        emissions = value * carbon_intensity  # Calculate CO2 emissions in tons
+        print(f"Calculated emissions: {emissions} tons of CO2")
+    else:
+        emissions = None
+
+    return jsonify({
+        "Metric": data['Metric'],
+        "OriginalValue": value,
+        "ConvertedValue": converted_value,
+        "TargetUnit": data['TargetUnit'],
+        "Emissions": emissions
+    }), 200
 
 @app.route('/add', methods=['POST'])
 def add_data():
@@ -71,49 +127,6 @@ def summarize_data():
         "total": total,
         "average": average,
         "count": count
-    }), 200
-
-@app.route('/convert', methods=['POST'])
-def convert_data():
-    data = request.get_json()
-    print(f"Received payload: {data}")  # Log the received payload
-
-    # Validate 'Metric'
-    if 'Metric' not in data or not isinstance(data['Metric'], str) or data['Metric'].strip() == '':
-        return jsonify({"error": "Invalid or missing 'Metric' field"}), 400
-
-    # Validate 'Value'
-    if 'Value' not in data or not isinstance(data['Value'], (int, float)) or data['Value'] <= 0:
-        return jsonify({"error": "Invalid or missing 'Value' field"}), 400
-
-    # Validate 'TargetUnit'
-    if 'TargetUnit' not in data or not isinstance(data['TargetUnit'], str) or data['TargetUnit'].strip() == '':
-        return jsonify({"error": "Invalid or missing 'TargetUnit' field"}), 400
-
-    # Normalize and extract inputs
-    metric = data['Metric'].strip().lower()  # Normalize to lowercase
-    value = data['Value']
-    target_unit = data['TargetUnit'].strip().lower()  # Normalize to lowercase
-
-    # Construct conversion key
-    conversion_key = f"{metric}_to_{target_unit}"
-    print(f"Generated conversion_key: {conversion_key}")
-
-    # Lookup conversion rate
-    conversion_rate = CONVERSION_RATES.get(conversion_key)
-    if conversion_rate is None:
-        print(f"Error: Conversion rate not found for key: {conversion_key}")
-        return jsonify({"error": f"Unsupported conversion: {conversion_key}"}), 400
-
-    # Perform conversion
-    converted_value = value * conversion_rate
-    print(f"Conversion successful. Original: {value}, Converted: {converted_value}")
-
-    return jsonify({
-        "Metric": data['Metric'],
-        "OriginalValue": value,
-        "ConvertedValue": converted_value,
-        "TargetUnit": data['TargetUnit']
     }), 200
 
 if __name__ == '__main__':
