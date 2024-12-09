@@ -34,6 +34,10 @@ CARBON_INTENSITY = {
     'solar': 0,  # 0 tons of CO2 per MWh (renewable)
 }
 
+@app.route('/')
+def home():
+    return jsonify({'message': 'Welcome to the GreenCount API!'})
+
 @app.route('/convert', methods=['POST'])
 def convert_data():
     data = request.get_json()
