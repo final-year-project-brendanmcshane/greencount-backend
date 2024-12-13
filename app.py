@@ -33,6 +33,15 @@ CARBON_INTENSITY = {
     'wind': 0,  # 0 tons of CO2 per MWh (renewable)
     'solar': 0,  # 0 tons of CO2 per MWh (renewable)
 }
+# Food intensity data
+FOOD_INTENSITY = {
+    'beef': 27,  # kg of CO2 per kg of beef
+    'chicken': 6,  # kg of CO2 per kg of chicken
+    'vegetables': 0.5,  # kg of CO2 per kg of vegetables
+    'pork': 12,  # kg of CO2 per kg of pork
+    'dairy': 2.5,  # kg of CO2 per kg of dairy
+}
+
 
 @app.route('/')
 def home():
@@ -132,6 +141,39 @@ def summarize_data():
         "average": average,
         "count": count
     }), 200
+
+@app.route('/food-impact', methods=['POST'])
+def food_impact():
+    data = request.get_json()
+    print(f"Received payload: {data}")
+
+    # Validate 'Food Item'
+    if 'FoodItem' not in data or not isinstance(data['FoodItem'], str) or data['FoodItem'].strip() == '':
+        return jsonify({"error": "Invalid or missing 'FoodItem' field"}), 400
+
+    # Validate 'Weight'
+    if 'Weight' not in data or not isinstance(data['Weight'], (int, float)) or data['Weight'] <= 0:
+        return jsonify({"error": "Invalid or missing 'Weight' field"}), 400
+
+    # Normalize food item input
+    food_item = data['FoodItem'].strip().lower()  # Normalize to lowercase
+    weight = data['Weight']
+
+    # Lookup food impact
+    food_impact = FOOD_INTENSITY.get(food_item)
+    if food_impact is None:
+        return jsonify({"error": f"Unsupported food item: {food_item}"}), 400
+
+    # Calculate CO2 emissions
+    emissions = weight * food_impact  # CO2 emissions in kg
+    print(f"Calculated emissions: {emissions} kg of CO2")
+
+    return jsonify({
+        "FoodItem": data['FoodItem'],
+        "Weight": weight,
+        "Emissions": emissions
+    }), 200
+
 
 if __name__ == '__main__':
     app.run(debug=True)
