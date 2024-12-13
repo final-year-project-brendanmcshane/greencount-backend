@@ -32,6 +32,7 @@ CARBON_INTENSITY = {
     'natural_gas': 0.4,  # 0.4 tons of CO2 per MWh
     'wind': 0,  # 0 tons of CO2 per MWh (renewable)
     'solar': 0,  # 0 tons of CO2 per MWh (renewable)
+    'electricity': 0.5  # 0.5 tons of CO2 per MWh (example for grid electricity)
 }
 # Food intensity data
 FOOD_INTENSITY = {
@@ -65,7 +66,7 @@ def convert_data():
         return jsonify({"error": "Invalid or missing 'TargetUnit' field"}), 400
 
     # Normalize and extract inputs
-    metric = data['Metric'].strip().lower()  # Normalize to lowercase
+    metric = data['Metric'].strip().lower()  # Normalize to lowercase (THIS LINE WAS ADDED)
     value = data['Value']
     target_unit = data['TargetUnit'].strip().lower()  # Normalize to lowercase
 
@@ -98,6 +99,7 @@ def convert_data():
         "TargetUnit": data['TargetUnit'],
         "Emissions": emissions
     }), 200
+
 
 @app.route('/add', methods=['POST'])
 def add_data():
