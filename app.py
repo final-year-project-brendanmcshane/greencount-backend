@@ -176,6 +176,18 @@ def food_impact():
         "Emissions": emissions
     }), 200
 
+@app.route('/model-info', methods=['GET'])
+def model_info():
+    return jsonify({
+        "model_name": "Carbon Emission Predictor",
+        "algorithm": "Linear Regression",
+        "status": "Model training not yet implemented",
+    }), 200
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+
+
