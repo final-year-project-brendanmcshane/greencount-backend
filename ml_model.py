@@ -25,7 +25,42 @@ def create_test_dataset():
     df.to_csv("test_emissions.csv", index=False)  # Save locally for testing
     return df
 
-# Create and load the test dataset
+# Train the model
+def train_model(df):
+    """Trains a Linear Regression model on energy consumption vs. emissions."""
+    print("\nTraining the model...")
+
+    # Extract features (X) and target variable (y)
+    X = df[['Energy_Consumption_kWh']]  # Independent variable
+    y = df['Emissions_kgCO2']  # Dependent variable
+
+    # Initialize and train the model
+    model = LinearRegression()
+    model.fit(X, y)
+
+    print("Model training complete!")
+    print(f"Model Coefficient (slope): {model.coef_[0]}")
+    print(f"Model Intercept: {model.intercept_}")
+
+    return model
+
+# Predict emissions
+def predict_emissions(model, energy_consumption):
+    """Predicts CO2 emissions for a given energy consumption value."""
+    input_df = pd.DataFrame({"Energy_Consumption_kWh": [energy_consumption]})  # Fix column format
+    prediction = model.predict(input_df)  
+    return prediction[0]
+
+
+# ✅ Create and load test dataset
 test_df = create_test_dataset()
 print("Test dataset created.")
-print(test_df)
+
+loaded_df = load_dataset("test_emissions.csv")
+if loaded_df is not None:
+    trained_model = train_model(loaded_df)  # Train model
+
+    # Example Prediction
+    test_value = 180  # Example energy consumption in kWh
+    predicted_emission = predict_emissions(trained_model, test_value)
+    print(f"\nPredicted emissions for {test_value} kWh: {predicted_emission:.2f} kgCO2")
