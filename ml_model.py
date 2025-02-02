@@ -47,9 +47,10 @@ def train_model(df):
 # Predict emissions
 def predict_emissions(model, energy_consumption):
     """Predicts CO2 emissions for a given energy consumption value."""
-    input_df = pd.DataFrame({"Energy_Consumption_kWh": [energy_consumption]})  # Fix column format
-    prediction = model.predict(input_df)  
-    return prediction[0]
+    input_df = pd.DataFrame({"Energy_Consumption_kWh": [energy_consumption]})
+    prediction = model.predict(input_df)
+    return round(prediction[0], 2)  # ✅ Now it rounds to 2 decimal places
+
 
 
 # ✅ Create and load test dataset
