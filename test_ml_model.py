@@ -6,7 +6,8 @@ from sklearn.linear_model import LinearRegression
 
 def create_test_dataset():
     """Create test dataset with expanded emissions categories"""
-    samples_per_category = 20
+    # Create more samples for better training
+    samples_per_category = 100  # Increased from 20
     total_categories = 13
     num_samples = samples_per_category * total_categories
     
@@ -15,21 +16,21 @@ def create_test_dataset():
     types = ['Diesel', 'Petrol', 'Hybrid', 'Electricity', 'Taxi', 'Bus', 'Rail', 'Flight',
              'Office', 'Home', 'Hotel-UK', 'Hotel-London', 'Average']
     
-    # Create realistic ranges for each category
+    # Create more focused ranges for each category
     amounts = []
     for cat, type_ in zip(categories * samples_per_category, types * samples_per_category):
         if cat == 'Car':
-            amounts.append(np.random.uniform(1, 100))  # miles
+            amounts.append(np.random.uniform(0, 500))  # Realistic mile range
         elif cat == 'Energy':
-            amounts.append(np.random.uniform(1, 500))  # kWh
+            amounts.append(np.random.uniform(0, 1000))  # Realistic kWh range
         elif cat == 'Transport':
-            amounts.append(np.random.uniform(1, 100))  # km
+            amounts.append(np.random.uniform(0, 300))  # Realistic km range
         elif cat == 'Working':
-            amounts.append(np.random.uniform(1, 12))   # hours
+            amounts.append(np.random.uniform(0, 24))   # Hours in a day
         elif cat == 'Accommodation':
-            amounts.append(np.random.uniform(1, 7))    # nights
+            amounts.append(np.random.uniform(1, 30))    # Nights in a month
         elif cat == 'Motorbike':
-            amounts.append(np.random.uniform(1, 100))  # km
+            amounts.append(np.random.uniform(0, 300))  # Realistic km range
     
     data = {
         'category': np.repeat(categories, samples_per_category),
@@ -37,7 +38,7 @@ def create_test_dataset():
         'amount': amounts
     }
     
-    # Emission rates for direct calculation
+    # Emission rates
     emission_rates = {
         ('Car', 'Diesel'): 0.27334,      # per mile
         ('Car', 'Petrol'): 0.26473,      # per mile
@@ -73,12 +74,20 @@ def train_model(df):
     X = np.column_stack((category_encoded, type_encoded, df['amount']))
     y = df['emissions']
     
-    # Split data
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    # Split data with stratification
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42, shuffle=True
+    )
     
     # Train model
     model = LinearRegression()
     model.fit(X_train, y_train)
+    
+    # Print model performance metrics
+    train_score = model.score(X_train, y_train)
+    test_score = model.score(X_test, y_test)
+    print(f"\nModel R² score (training): {train_score:.4f}")
+    print(f"Model R² score (testing): {test_score:.4f}")
     
     return model, le_category, le_type
 
