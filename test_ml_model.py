@@ -6,12 +6,10 @@ from sklearn.linear_model import LinearRegression
 
 def create_test_dataset():
     """Create test dataset with expanded emissions categories"""
-    # Define the number of samples (must be divisible by number of categories)
     samples_per_category = 20
     total_categories = 13
     num_samples = samples_per_category * total_categories
     
-    # Create repeating categories and types
     categories = ['Car', 'Car', 'Car', 'Energy', 'Transport', 'Transport', 'Transport', 'Transport',
                  'Working', 'Working', 'Accommodation', 'Accommodation', 'Motorbike']
     types = ['Diesel', 'Petrol', 'Hybrid', 'Electricity', 'Taxi', 'Bus', 'Rail', 'Flight',
@@ -39,7 +37,7 @@ def create_test_dataset():
         'amount': amounts
     }
     
-    # Emission rates (by category and type)
+    # Emission rates for direct calculation
     emission_rates = {
         ('Car', 'Diesel'): 0.27334,      # per mile
         ('Car', 'Petrol'): 0.26473,      # per mile
@@ -62,8 +60,30 @@ def create_test_dataset():
     
     return pd.DataFrame(data)
 
-def calculate_emission(category, type_, amount):
-    """Calculate emissions directly without ML"""
+def train_model(df):
+    """Train ML model"""
+    # Encode categorical variables
+    le_category = LabelEncoder()
+    le_type = LabelEncoder()
+    
+    category_encoded = le_category.fit_transform(df['category'])
+    type_encoded = le_type.fit_transform(df['type'])
+    
+    # Prepare features and target
+    X = np.column_stack((category_encoded, type_encoded, df['amount']))
+    y = df['emissions']
+    
+    # Split data
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    
+    # Train model
+    model = LinearRegression()
+    model.fit(X_train, y_train)
+    
+    return model, le_category, le_type
+
+def calculate_emission_direct(category, type_, amount):
+    """Calculate emissions using direct multiplication"""
     emission_rates = {
         ('Car', 'Diesel'): 0.27334,      # per mile
         ('Car', 'Petrol'): 0.26473,      # per mile
@@ -81,7 +101,20 @@ def calculate_emission(category, type_, amount):
     }
     return amount * emission_rates[(category, type_)]
 
+def predict_emissions_ml(model, le_category, le_type, category, type_, amount):
+    """Predict emissions using ML model"""
+    category_encoded = le_category.transform([category])[0]
+    type_encoded = le_type.transform([type_])[0]
+    prediction = model.predict([[category_encoded, type_encoded, amount]])
+    return prediction[0]
+
 if __name__ == "__main__":
+    # Create dataset and train model
+    print("Creating dataset and training ML model...")
+    df = create_test_dataset()
+    model, le_category, le_type = train_model(df)
+    print("Model training complete!")
+    
     # Test predictions
     while True:
         print("\nEmissions Calculator")
@@ -147,9 +180,13 @@ if __name__ == "__main__":
             elif category.lower() == 'motorbike':
                 amount = float(input("Enter distance (km): "))
             
-            # Calculate emissions directly instead of using ML
-            emissions = calculate_emission(category, type_, amount)
-            print(f"\nCalculated CO2 emissions: {emissions:.3f} kg")
+            # Calculate emissions using both methods
+            direct_emissions = calculate_emission_direct(category, type_, amount)
+            ml_emissions = predict_emissions_ml(model, le_category, le_type, category, type_, amount)
+            
+            print(f"\nDirect calculation CO2 emissions: {direct_emissions:.3f} kg")
+            print(f"ML model predicted CO2 emissions: {ml_emissions:.3f} kg")
+            print(f"Difference: {abs(direct_emissions - ml_emissions):.3f} kg")
             
         except ValueError:
             print("Invalid input! Please enter a valid number.")
