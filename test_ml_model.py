@@ -1,3 +1,5 @@
+
+
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -5,52 +7,59 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.linear_model import LinearRegression
 
 def create_test_dataset():
-    """Create a test dataset with emissions data"""
-    # Creating sample data
+    """Create test dataset with vehicle and energy emissions"""
+    num_samples = 300
     data = {
-        'fuel_type': ['Diesel', 'Petrol', 'Hybrid'] * 100,  # 300 samples
-        'miles_driven': np.random.uniform(100, 1000, 300),
+        'type': ['Car', 'Car', 'Car', 'Energy', 'Energy', 'Energy'] * 50,
+        'subtype': ['Diesel', 'Petrol', 'Hybrid', 'Natural_Gas', 'LNG', 'LPG'] * 50,
+        'amount': np.random.uniform(100, 1000, num_samples),  # miles or kWh
     }
     
-    # Emission rates per mile
+    # Emission rates
     emission_rates = {
-        'Diesel': 0.27334,
-        'Petrol': 0.26473,
-        'Hybrid': 0.20288
+        ('Car', 'Diesel'): 0.27334,      # per mile
+        ('Car', 'Petrol'): 0.26473,      # per mile
+        ('Car', 'Hybrid'): 0.20288,      # per mile
+        ('Energy', 'Natural_Gas'): 0.20264,  # per kWh
+        ('Energy', 'LNG'): 0.20440,         # per kWh
+        ('Energy', 'LPG'): 0.23031          # per kWh
     }
     
     # Calculate emissions
-    data['emissions'] = [miles * emission_rates[fuel] 
-                        for miles, fuel in zip(data['miles_driven'], data['fuel_type'])]
+    data['emissions'] = [amount * emission_rates[(type_, subtype)] 
+                        for type_, subtype, amount in zip(data['type'], data['subtype'], data['amount'])]
     
     return pd.DataFrame(data)
 
 def train_model(df):
-    """Train the ML model"""
-    # Encode fuel types
-    le = LabelEncoder()
-    fuel_encoded = le.fit_transform(df['fuel_type'])
+    """Train ML model"""
+    # Encode categorical variables
+    le_type = LabelEncoder()
+    le_subtype = LabelEncoder()
+    
+    type_encoded = le_type.fit_transform(df['type'])
+    subtype_encoded = le_subtype.fit_transform(df['subtype'])
     
     # Prepare features and target
-    X = np.column_stack((fuel_encoded, df['miles_driven']))
+    X = np.column_stack((type_encoded, subtype_encoded, df['amount']))
     y = df['emissions']
     
-    # Split the data
+    # Split data
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     
-    # Train the model
+    # Train model
     model = LinearRegression()
     model.fit(X_train, y_train)
     
-    return model, le
+    return model, le_type, le_subtype
 
-def predict_emissions(model, le, fuel_type, miles):
-    """Predict emissions for given fuel type and miles"""
-    fuel_encoded = le.transform([fuel_type])[0]
-    prediction = model.predict([[fuel_encoded, miles]])
+def predict_emissions(model, le_type, le_subtype, type_, subtype, amount):
+    """Predict emissions"""
+    type_encoded = le_type.transform([type_])[0]
+    subtype_encoded = le_subtype.transform([subtype])[0]
+    prediction = model.predict([[type_encoded, subtype_encoded, amount]])
     return round(prediction[0], 3)
 
-# Test the model
 if __name__ == "__main__":
     # Create and display dataset
     df = create_test_dataset()
@@ -58,32 +67,28 @@ if __name__ == "__main__":
     print(df.head())
     
     # Train model
-    model, label_encoder = train_model(df)
+    model, le_type, le_subtype = train_model(df)
     
     # Test predictions
     while True:
         print("\nEmissions Calculator")
         print("-------------------")
-        print("Available fuel types: Diesel, Petrol, Hybrid")
+        print("Available types: Car, Energy")
+        print("Car subtypes: Diesel, Petrol, Hybrid")
+        print("Energy subtypes: Natural_Gas, LNG, LPG")
         
         try:
-            fuel = input("Enter fuel type (or 'exit' to quit): ").capitalize()
-            if fuel.lower() == 'exit':
+            type_ = input("Enter type (or 'exit' to quit): ").capitalize()
+            if type_.lower() == 'exit':
                 break
                 
-            if fuel not in ['Diesel', 'Petrol', 'Hybrid']:
-                print("Invalid fuel type!")
-                continue
-                
-            miles = float(input("Enter miles driven: "))
-            if miles < 0:
-                print("Miles cannot be negative!")
-                continue
-                
-            emissions = predict_emissions(model, label_encoder, fuel, miles)
+            subtype = input("Enter subtype: ").capitalize()
+            amount = float(input("Enter amount (miles for car, kWh for energy): "))
+            
+            emissions = predict_emissions(model, le_type, le_subtype, type_, subtype, amount)
             print(f"\nPredicted CO2 emissions: {emissions} kg")
             
         except ValueError:
-            print("Invalid input! Please enter a number for miles.")
+            print("Invalid input! Please check your values.")
         except Exception as e:
             print(f"An error occurred: {e}")
