@@ -118,8 +118,19 @@ if __name__ == "__main__":
                 'Motorbike': ['Average']
             }
             
-            if type_.capitalize() not in [t.capitalize() for t in valid_types[category.capitalize()]]:
-                print(f"Invalid type for {category}. Please choose from: {', '.join(valid_types[category.capitalize()])}")
+            category = category.capitalize()
+            
+            # Special handling for hotel types
+            if category == 'Accommodation':
+                if type_.upper() == 'HOTEL-UK':
+                    type_ = 'Hotel-UK'
+                elif type_.upper() == 'HOTEL-LONDON':
+                    type_ = 'Hotel-London'
+            else:
+                type_ = type_.capitalize()
+            
+            if type_ not in valid_types[category]:
+                print(f"Invalid type for {category}. Please choose from: {', '.join(valid_types[category])}")
                 continue
             
             # Custom prompts based on category
@@ -137,7 +148,7 @@ if __name__ == "__main__":
                 amount = float(input("Enter distance (km): "))
             
             # Calculate emissions directly instead of using ML
-            emissions = calculate_emission(category.capitalize(), type_.capitalize(), amount)
+            emissions = calculate_emission(category, type_, amount)
             print(f"\nCalculated CO2 emissions: {emissions:.3f} kg")
             
         except ValueError:
