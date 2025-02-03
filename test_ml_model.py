@@ -1,5 +1,3 @@
-
-
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -10,8 +8,8 @@ def create_test_dataset():
     """Create test dataset with vehicle and energy emissions"""
     num_samples = 300
     data = {
-        'type': ['Car', 'Car', 'Car', 'Energy', 'Energy', 'Energy'] * 50,
-        'subtype': ['Diesel', 'Petrol', 'Hybrid', 'Natural_Gas', 'LNG', 'LPG'] * 50,
+        'type': ['Car', 'Car', 'Car', 'Energy'] * 75,  # 300 samples total
+        'subtype': ['Diesel', 'Petrol', 'Hybrid', 'Electricity'] * 75,
         'amount': np.random.uniform(100, 1000, num_samples),  # miles or kWh
     }
     
@@ -20,9 +18,7 @@ def create_test_dataset():
         ('Car', 'Diesel'): 0.27334,      # per mile
         ('Car', 'Petrol'): 0.26473,      # per mile
         ('Car', 'Hybrid'): 0.20288,      # per mile
-        ('Energy', 'Natural_Gas'): 0.20264,  # per kWh
-        ('Energy', 'LNG'): 0.20440,         # per kWh
-        ('Energy', 'LPG'): 0.23031          # per kWh
+        ('Energy', 'Electricity'): 0.20705  # per kWh (2024 UK rate)
     }
     
     # Calculate emissions
@@ -75,7 +71,7 @@ if __name__ == "__main__":
         print("-------------------")
         print("Available types: Car, Energy")
         print("Car subtypes: Diesel, Petrol, Hybrid")
-        print("Energy subtypes: Natural_Gas, LNG, LPG")
+        print("Energy subtypes: Electricity")
         
         try:
             type_ = input("Enter type (or 'exit' to quit): ").capitalize()
@@ -83,7 +79,10 @@ if __name__ == "__main__":
                 break
                 
             subtype = input("Enter subtype: ").capitalize()
-            amount = float(input("Enter amount (miles for car, kWh for energy): "))
+            if type_ == 'Car':
+                amount = float(input("Enter miles driven: "))
+            else:
+                amount = float(input("Enter electricity used (kWh): "))
             
             emissions = predict_emissions(model, le_type, le_subtype, type_, subtype, amount)
             print(f"\nPredicted CO2 emissions: {emissions} kg")
@@ -92,3 +91,4 @@ if __name__ == "__main__":
             print("Invalid input! Please check your values.")
         except Exception as e:
             print(f"An error occurred: {e}")
+
