@@ -62,6 +62,16 @@ if loaded_df is not None:
     trained_model = train_model(loaded_df)  # Train model
 
     # Example Prediction
-    test_value = 180  # Example energy consumption in kWh
-    predicted_emission = predict_emissions(trained_model, test_value)
-    print(f"\nPredicted emissions for {test_value} kWh: {predicted_emission:.2f} kgCO2")
+    while True:
+        user_input = input("\nEnter energy consumption in kWh (or type 'exit' to quit): ")
+    
+        if user_input.lower() == 'exit':
+            print("Exiting program.")
+            break
+
+        try:
+            test_value = float(user_input)  # Convert user input to float
+            predicted_emission = predict_emissions(trained_model, test_value)
+            print(f"Predicted emissions for {test_value} kWh: {predicted_emission} kgCO2")
+        except ValueError:
+            print("⚠️ Invalid input. Please enter a number.")
