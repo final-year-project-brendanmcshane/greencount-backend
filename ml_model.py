@@ -2,6 +2,47 @@ import pandas as pd
 import numpy as np
 from sklearn.linear_model import LinearRegression
 
+# Load and Analyze UK Government Emissions Dataset First
+print("\n🚀 Starting UK Emissions Dataset Analysis...")  # Debug Print
+
+def analyze_uk_emissions(file_path):
+    """Loads and analyzes the UK emissions dataset."""
+    try:
+        df = pd.read_csv(file_path)
+        df.columns = df.columns.str.strip()  # Clean column names
+
+        print("✅ Dataset loaded successfully!")
+        print("\n📝 Column Names:", df.columns.tolist())
+        print("\n🔍 Unique Activities (first 20):")
+        print(df['Activity'].unique()[:20])  # Show first 20 unique activities
+
+        return df
+    except Exception as e:
+        print(f"❌ Error loading dataset: {e}")
+        return None
+
+# Run UK Emissions Analysis
+uk_emissions_df = analyze_uk_emissions(r"C:\Users\brend\Desktop\emissions.csv")
+
+if uk_emissions_df is not None:
+    print("\n✅ Successfully loaded and analyzed UK emissions dataset!")
+else:
+    print("\n❌ Failed to load UK emissions dataset. Check file path or format.")
+
+def explore_dataset(df):
+    """Prints dataset structure and unique values for key columns."""
+    print("\n📌 Column Names:\n", df.columns.tolist())
+
+    # Print unique values in key columns to understand what's inside
+    for col in df.columns:
+        unique_values = df[col].dropna().unique()[:10]  # Show first 10 unique values
+        print(f"\n🔍 Unique values in '{col}' (first 10):\n", unique_values)
+
+# Run this function
+if uk_emissions_df is not None:
+    explore_dataset(uk_emissions_df)
+
+
 # Temporary function to load a dataset
 def load_dataset(file_path):
     """Loads the emissions dataset into a pandas DataFrame."""
@@ -75,3 +116,70 @@ if loaded_df is not None:
             print(f"Predicted emissions for {test_value} kWh: {predicted_emission} kgCO2")
         except ValueError:
             print("⚠️ Invalid input. Please enter a number.")
+
+# Load the UK Government emissions dataset
+def load_uk_emissions(file_path):
+    """Loads and displays the first few rows of the UK emissions dataset."""
+    try:
+        df = pd.read_csv(file_path)
+
+        # Strip any leading or trailing spaces from column names
+        df.columns = df.columns.str.strip()
+
+        print("Dataset loaded successfully!")
+        print("\nColumn Names:", df.columns.tolist())  # Print column names for reference
+        print(df.head(10))  # Show first few rows
+
+        return df
+    except Exception as e:
+        print(f"Error loading dataset: {e}")
+        return None
+
+# Example usage
+uk_emissions_df = load_uk_emissions(r"C:\Users\brend\Desktop\emissions.csv")
+
+def analyze_uk_emissions(file_path):
+    """Loads and analyzes the UK emissions dataset."""
+    try:
+        df = pd.read_csv(file_path)
+
+        # Strip any leading/trailing spaces from column names
+        df.columns = df.columns.str.strip()
+
+        print("✅ Dataset loaded successfully!")
+        print("\n📝 Column Names:", df.columns.tolist())  # Print column names for reference
+
+        print("\n🔍 Unique Activities (first 20):")
+        print(df['Activity'].unique()[:20])  # Print first 20 unique activities to explore data
+
+        return df
+    except Exception as e:
+        print(f"❌ Error loading dataset: {e}")
+        return None
+
+# Run this function
+uk_emissions_df = analyze_uk_emissions(r"C:\Users\brend\Desktop\emissions.csv")
+
+def load_and_check_dataset(file_path):
+    """Loads the dataset and prints basic info."""
+    try:
+        df = pd.read_csv(file_path)
+
+        # Remove extra spaces from column names
+        df.columns = df.columns.str.strip()
+
+        print("✅ Dataset loaded successfully!")
+        print("\n📌 First 10 rows:")
+        print(df.head(10))  # Show first 10 rows
+
+        print("\n📌 Column Names:")
+        print(df.columns.tolist())  # Show all column names
+
+        print("\n📌 Unique 'Activity' values (first 20):")
+        print(df['Activity'].unique()[:20])  # Show first 20 unique activities
+
+        return df
+    except Exception as e:
+        print(f"❌ Error loading dataset: {e}")
+        return None
+
