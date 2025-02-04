@@ -1,98 +1,12 @@
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder
-from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import RandomForestRegressor
+from datetime import datetime, timedelta
 
-def create_test_dataset():
-    """Create test dataset with expanded emissions categories"""
-    # Create more samples for better training
-    samples_per_category = 100  # Increased from 20
-    total_categories = 13
-    num_samples = samples_per_category * total_categories
-    
-    categories = ['Car', 'Car', 'Car', 'Energy', 'Transport', 'Transport', 'Transport', 'Transport',
-                 'Working', 'Working', 'Accommodation', 'Accommodation', 'Motorbike']
-    types = ['Diesel', 'Petrol', 'Hybrid', 'Electricity', 'Taxi', 'Bus', 'Rail', 'Flight',
-             'Office', 'Home', 'Hotel-UK', 'Hotel-London', 'Average']
-    
-    # Create more focused ranges for each category
-    amounts = []
-    for cat, type_ in zip(categories * samples_per_category, types * samples_per_category):
-        if cat == 'Car':
-            amounts.append(np.random.uniform(0, 500))  # Realistic mile range
-        elif cat == 'Energy':
-            amounts.append(np.random.uniform(0, 1000))  # Realistic kWh range
-        elif cat == 'Transport':
-            amounts.append(np.random.uniform(0, 300))  # Realistic km range
-        elif cat == 'Working':
-            amounts.append(np.random.uniform(0, 24))   # Hours in a day
-        elif cat == 'Accommodation':
-            amounts.append(np.random.uniform(1, 30))    # Nights in a month
-        elif cat == 'Motorbike':
-            amounts.append(np.random.uniform(0, 300))  # Realistic km range
-    
-    data = {
-        'category': np.repeat(categories, samples_per_category),
-        'type': np.repeat(types, samples_per_category),
-        'amount': amounts
-    }
-    
-    # Emission rates
-    emission_rates = {
-        ('Car', 'Diesel'): 0.27334,      # per mile
-        ('Car', 'Petrol'): 0.26473,      # per mile
-        ('Car', 'Hybrid'): 0.20288,      # per mile
-        ('Energy', 'Electricity'): 0.20705,  # per kWh
-        ('Transport', 'Taxi'): 0.14861,   # per passenger.km
-        ('Transport', 'Bus'): 0.10846,    # per passenger.km
-        ('Transport', 'Rail'): 0.03546,   # per passenger.km
-        ('Transport', 'Flight'): 0.27257, # per passenger.km
-        ('Working', 'Office'): 0.03144,   # per hour
-        ('Working', 'Home'): 0.33378,     # per hour
-        ('Accommodation', 'Hotel-UK'): 10.40000,    # per night
-        ('Accommodation', 'Hotel-London'): 11.50000, # per night
-        ('Motorbike', 'Average'): 0.11367,  # per km
-    }
-    
-    # Calculate emissions using direct multiplication
-    data['emissions'] = [amount * emission_rates[(cat, type_)] 
-                        for cat, type_, amount in zip(data['category'], data['type'], data['amount'])]
-    
-    return pd.DataFrame(data)
-
-def train_model(df):
-    """Train ML model"""
-    # Encode categorical variables
-    le_category = LabelEncoder()
-    le_type = LabelEncoder()
-    
-    category_encoded = le_category.fit_transform(df['category'])
-    type_encoded = le_type.fit_transform(df['type'])
-    
-    # Prepare features and target
-    X = np.column_stack((category_encoded, type_encoded, df['amount']))
-    y = df['emissions']
-    
-    # Split data with stratification
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42, shuffle=True
-    )
-    
-    # Train model
-    model = LinearRegression()
-    model.fit(X_train, y_train)
-    
-    # Print model performance metrics
-    train_score = model.score(X_train, y_train)
-    test_score = model.score(X_test, y_test)
-    print(f"\nModel R² score (training): {train_score:.4f}")
-    print(f"Model R² score (testing): {test_score:.4f}")
-    
-    return model, le_category, le_type
-
-def calculate_emission_direct(category, type_, amount):
-    """Calculate emissions using direct multiplication"""
+def calculate_emission(category, type_, amount):
+    """Calculate direct emissions based on user input"""
     emission_rates = {
         ('Car', 'Diesel'): 0.27334,      # per mile
         ('Car', 'Petrol'): 0.26473,      # per mile
@@ -110,94 +24,156 @@ def calculate_emission_direct(category, type_, amount):
     }
     return amount * emission_rates[(category, type_)]
 
-def predict_emissions_ml(model, le_category, le_type, category, type_, amount):
-    """Predict emissions using ML model"""
-    category_encoded = le_category.transform([category])[0]
-    type_encoded = le_type.transform([type_])[0]
-    prediction = model.predict([[category_encoded, type_encoded, amount]])
-    return prediction[0]
+def generate_historical_data(days=365):
+    """Generate synthetic historical emission data with patterns"""
+    dates = pd.date_range(end=datetime.now(), periods=days)
+    
+    data = []
+    for date in dates:
+        # Add seasonal patterns
+        season_factor = 1 + 0.3 * np.sin(2 * np.pi * date.dayofyear / 365)
+        
+        # Add weekly patterns
+        weekday_factor = 1.3 if date.weekday() < 5 else 0.7
+        
+        # Generate typical usage patterns
+        car_miles = np.random.normal(30, 10) * weekday_factor * season_factor
+        energy_kwh = np.random.normal(20, 5) * season_factor
+        transport_km = np.random.normal(15, 5) * weekday_factor
+        
+        # Calculate emissions
+        car_emissions = car_miles * 0.27334
+        energy_emissions = energy_kwh * 0.20705
+        transport_emissions = transport_km * 0.14861
+        
+        total_emissions = car_emissions + energy_emissions + transport_emissions
+        
+        data.append({
+            'date': date,
+            'day_of_week': date.dayofweek,
+            'month': date.month,
+            'season': (date.month % 12 + 3) // 3,
+            'is_weekend': date.weekday() >= 5,
+            'car_miles': car_miles,
+            'energy_kwh': energy_kwh,
+            'transport_km': transport_km,
+            'total_emissions': total_emissions
+        })
+    
+    return pd.DataFrame(data)
+
+def train_prediction_model(df):
+    """Train model to predict future emissions"""
+    features = ['day_of_week', 'month', 'season', 'is_weekend']
+    X = df[features]
+    y = df['total_emissions']
+    
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    
+    model = RandomForestRegressor(n_estimators=100, random_state=42)
+    model.fit(X_train, y_train)
+    
+    return model
+
+def predict_future_emissions(model, days=7):
+    """Predict emissions for next few days"""
+    future_dates = pd.date_range(start=datetime.now(), periods=days)
+    predictions = []
+    
+    for date in future_dates:
+        features = {
+            'day_of_week': date.dayofweek,
+            'month': date.month,
+            'season': (date.month % 12 + 3) // 3,
+            'is_weekend': date.weekday() >= 5
+        }
+        
+        X_pred = pd.DataFrame([features])
+        prediction = model.predict(X_pred)[0]
+        
+        predictions.append({
+            'date': date.strftime('%Y-%m-%d'),
+            'day': date.strftime('%A'),
+            'predicted_emissions': round(prediction, 2)
+        })
+    
+    return predictions
 
 if __name__ == "__main__":
-    # Create dataset and train model
-    print("Creating dataset and training ML model...")
-    df = create_test_dataset()
-    model, le_category, le_type = train_model(df)
-    print("Model training complete!")
+    print("Loading emission prediction model...")
+    historical_data = generate_historical_data()
+    prediction_model = train_prediction_model(historical_data)
     
-    # Test predictions
     while True:
-        print("\nEmissions Calculator")
-        print("-------------------")
-        print("Categories: Car, Energy, Transport, Working, Accommodation, Motorbike")
-        print("Types by category:")
-        print("- Car: Diesel, Petrol, Hybrid")
-        print("- Energy: Electricity")
-        print("- Transport: Taxi, Bus, Rail, Flight")
-        print("- Working: Office, Home")
-        print("- Accommodation: Hotel-UK, Hotel-London")
-        print("- Motorbike: Average")
+        print("\nEmissions Calculator and Predictor")
+        print("----------------------------------")
+        print("1. Calculate current emissions")
+        print("2. View emission predictions")
+        print("3. Exit")
         
-        try:
-            category = input("\nEnter category (or 'exit' to quit): ").strip()
-            if category.lower() == 'exit':
-                break
+        choice = input("\nEnter your choice (1-3): ")
+        
+        if choice == "1":
+            print("\nCategories: Car, Energy, Transport, Working, Accommodation, Motorbike")
+            print("Types by category:")
+            print("- Car: Diesel, Petrol, Hybrid")
+            print("- Energy: Electricity")
+            print("- Transport: Taxi, Bus, Rail, Flight")
+            print("- Working: Office, Home")
+            print("- Accommodation: Hotel-UK, Hotel-London")
+            print("- Motorbike: Average")
             
-            # Validate category
-            valid_categories = ['Car', 'Energy', 'Transport', 'Working', 'Accommodation', 'Motorbike']
-            if category.capitalize() not in valid_categories:
-                print(f"Invalid category. Please choose from: {', '.join(valid_categories)}")
-                continue
+            try:
+                category = input("\nEnter category: ").strip().capitalize()
                 
-            type_ = input("Enter type: ").strip()
+                # Validate category
+                valid_categories = ['Car', 'Energy', 'Transport', 'Working', 'Accommodation', 'Motorbike']
+                if category not in valid_categories:
+                    print(f"Invalid category. Please choose from: {', '.join(valid_categories)}")
+                    continue
+                
+                type_ = input("Enter type: ").strip()
+                if category == 'Accommodation':
+                    type_ = type_.upper()
+                else:
+                    type_ = type_.capitalize()
+                
+                # Get amount based on category
+                amount_prompt = {
+                    'Car': "Enter miles driven: ",
+                    'Energy': "Enter electricity used (kWh): ",
+                    'Transport': "Enter distance (km): ",
+                    'Working': "Enter hours: ",
+                    'Accommodation': "Enter nights: ",
+                    'Motorbike': "Enter distance (km): "
+                }
+                
+                amount = float(input(amount_prompt[category]))
+                
+                # Calculate emissions
+                emissions = calculate_emission(category, type_, amount)
+                print(f"\nCalculated CO2 emissions: {emissions:.3f} kg")
+                
+            except ValueError:
+                print("Invalid input! Please enter a valid number.")
+            except Exception as e:
+                print(f"An error occurred: {str(e)}")
+        
+        elif choice == "2":
+            predictions = predict_future_emissions(prediction_model)
+            print("\nPredicted Emissions (Next 7 days):")
+            for pred in predictions:
+                print(f"{pred['day']} ({pred['date']}): {pred['predicted_emissions']:.2f} kg CO2")
             
-            # Validate type based on category
-            valid_types = {
-                'Car': ['Diesel', 'Petrol', 'Hybrid'],
-                'Energy': ['Electricity'],
-                'Transport': ['Taxi', 'Bus', 'Rail', 'Flight'],
-                'Working': ['Office', 'Home'],
-                'Accommodation': ['Hotel-UK', 'Hotel-London'],
-                'Motorbike': ['Average']
-            }
+            # Additional insights
+            weekday_avg = historical_data[~historical_data['is_weekend']]['total_emissions'].mean()
+            weekend_avg = historical_data[historical_data['is_weekend']]['total_emissions'].mean()
+            print(f"\nTypical weekday emissions: {weekday_avg:.2f} kg CO2")
+            print(f"Typical weekend emissions: {weekend_avg:.2f} kg CO2")
             
-            category = category.capitalize()
-            
-            # Special handling for hotel types
-            if category == 'Accommodation':
-                if type_.upper() == 'HOTEL-UK':
-                    type_ = 'Hotel-UK'
-                elif type_.upper() == 'HOTEL-LONDON':
-                    type_ = 'Hotel-London'
-            else:
-                type_ = type_.capitalize()
-            
-            if type_ not in valid_types[category]:
-                print(f"Invalid type for {category}. Please choose from: {', '.join(valid_types[category])}")
-                continue
-            
-            # Custom prompts based on category
-            if category.lower() == 'car':
-                amount = float(input("Enter miles driven: "))
-            elif category.lower() == 'energy':
-                amount = float(input("Enter electricity used (kWh): "))
-            elif category.lower() == 'transport':
-                amount = float(input("Enter distance (km): "))
-            elif category.lower() == 'working':
-                amount = float(input("Enter hours: "))
-            elif category.lower() == 'accommodation':
-                amount = float(input("Enter nights: "))
-            elif category.lower() == 'motorbike':
-                amount = float(input("Enter distance (km): "))
-            
-            # Calculate emissions using both methods
-            direct_emissions = calculate_emission_direct(category, type_, amount)
-            ml_emissions = predict_emissions_ml(model, le_category, le_type, category, type_, amount)
-            
-            print(f"\nDirect calculation CO2 emissions: {direct_emissions:.3f} kg")
-            print(f"ML model predicted CO2 emissions: {ml_emissions:.3f} kg")
-            print(f"Difference: {abs(direct_emissions - ml_emissions):.3f} kg")
-            
-        except ValueError:
-            print("Invalid input! Please enter a valid number.")
-        except Exception as e:
-            print(f"An error occurred: {e}")
+        elif choice == "3":
+            print("\nExiting program. Goodbye!")
+            break
+        
+        else:
+            print("Invalid choice. Please enter 1, 2, or 3.")
