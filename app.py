@@ -185,6 +185,58 @@ def model_info():
     }), 200
 
 
+@app.route('/add-user-emission', methods=['POST'])
+def add_user_emission():
+    data = request.get_json()
+    auth_header = request.headers.get('Authorization')
+    
+    if not auth_header:
+        return jsonify({"error": "No authorization header"}), 401
+        
+    user_id = auth_header.split(' ')[1]
+    
+    record = {
+        'user_id': user_id,
+        'metric': data['Metric'],
+        'unit': data['Unit'],
+        'value': data['Value']
+    }
+    
+    response = supabase.table('user_emissions').insert(record).execute()
+    return jsonify(response.data), 201
+
+@app.route('/get-user-emissions', methods=['GET'])
+def get_user_emissions():
+    auth_header = request.headers.get('Authorization')
+    
+    if not auth_header:
+        return jsonify({"error": "No authorization header"}), 401
+        
+    user_id = auth_header.split(' ')[1]
+    
+    response = supabase.table('user_emissions')\
+        .select('*')\
+        .eq('user_id', user_id)\
+        .execute()
+        
+    return jsonify(response.data), 200#
+
+@app.route('/test-emission', methods=['POST'])
+def test_emission():
+    data = request.get_json()
+    try:
+        response = supabase.table('user_emissions').insert({
+            'user_id': '12345', # Temporary test ID
+            'metric': data.get('Metric'),
+            'unit': data.get('Unit'), 
+            'value': data.get('Value')
+        }).execute()
+        print("Inserted data:", response.data)
+        return jsonify({"success": True, "data": response.data})
+    except Exception as e:
+        print("Error:", str(e))
+        return jsonify({"error": str(e)})
+
 
 if __name__ == '__main__':
     app.run(debug=True)
