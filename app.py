@@ -238,6 +238,40 @@ def test_emission():
         return jsonify({"error": str(e)})
 
 
+import uuid  # Add this at the top with other imports
+
+@app.route('/test-db', methods=['GET'])
+def test_db():
+    try:
+        # Create a proper UUID
+        test_user_id = str(uuid.uuid4())
+        
+        test_data = {
+            'user_id': test_user_id,  # Using proper UUID
+            'metric': 'TestMetric',
+            'unit': 'TestUnit',
+            'value': 100
+        }
+        
+        # Try to insert
+        insert_response = supabase.table('user_emissions').insert(test_data).execute()
+        print("Insert response:", insert_response.data)
+        
+        # Try to fetch
+        fetch_response = supabase.table('user_emissions').select("*").execute()
+        print("Fetch response:", fetch_response.data)
+        
+        return jsonify({
+            "message": "Database test successful",
+            "inserted": insert_response.data,
+            "fetched": fetch_response.data
+        })
+        
+    except Exception as e:
+        print("Error:", str(e))
+        return jsonify({"error": str(e)})
+
+
 if __name__ == '__main__':
     app.run(debug=True)
 
