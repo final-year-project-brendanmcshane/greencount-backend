@@ -13,9 +13,13 @@ CORS(app)
 # Get Supabase URL and KEY from the environment
 SUPABASE_URL = os.getenv('SUPABASE_URL')
 SUPABASE_KEY = os.getenv('SUPABASE_KEY')
+SUPABASE_SERVICE_KEY = os.getenv('SUPABASE_SERVICE_KEY')
 
-# Initialize Supabase client
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+# Initialize Supabase client# Initialize Supabase client
+supabase: Client = create_client(
+    SUPABASE_URL, 
+    os.getenv('SUPABASE_SERVICE_KEY')  # Changed from SUPABASE_KEY
+)
 
 # Conversion rates (ensure they are consistent)
 CONVERSION_RATES = {
@@ -272,20 +276,34 @@ def test_db():
         return jsonify({"error": str(e)})
 
 
+import re  # Import for email validation
+
 @app.route('/auth/signup', methods=['POST'])
 def signup():
     data = request.get_json()
+    email = data.get('email', '').strip()
+    password = data.get('password', '')
+
     try:
-        response = supabase.auth.sign_up({
-            "email": data['email'],
-            "password": data['password']
-        })
+        response = supabase.auth.sign_up({"email": email, "password": password})
+
+        if 'user' in response:
+            user_data = {
+                "id": response.user.id,
+                "email": response.user.email,
+                "created_at": response.user.created_at
+            }
+        else:
+            user_data = None
+
         return jsonify({
-            "user": response.user,
-            "session": response.session
+            "message": "Signup successful",
+            "user": user_data
         }), 200
+
     except Exception as e:
         return jsonify({"error": str(e)}), 400
+
 
 @app.route('/auth/login', methods=['POST'])
 def login():
