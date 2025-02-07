@@ -272,6 +272,31 @@ def test_db():
         return jsonify({"error": str(e)})
 
 
+@app.route('/auth/signup', methods=['POST'])
+def signup():
+    data = request.get_json()
+    try:
+        response = supabase.auth.sign_up({
+            "email": data['email'],
+            "password": data['password']
+        })
+        return jsonify(response), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+@app.route('/auth/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    try:
+        response = supabase.auth.sign_in_with_password({
+            "email": data['email'],
+            "password": data['password']
+        })
+        return jsonify(response), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+
 if __name__ == '__main__':
     app.run(debug=True)
 
