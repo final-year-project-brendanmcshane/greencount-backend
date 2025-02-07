@@ -280,7 +280,10 @@ def signup():
             "email": data['email'],
             "password": data['password']
         })
-        return jsonify(response), 200
+        return jsonify({
+            "user": response.user,
+            "session": response.session
+        }), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
