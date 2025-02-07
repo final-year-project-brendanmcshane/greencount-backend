@@ -1,7 +1,7 @@
 import requests
 
 signup_data = {
-    "email": "brendan12@gmail.com",  # Use a real email format
+    "email": "mcshanebrendan@yahoo.com",  # Use a real email format
     "password": "Password123!" 
 }
 
