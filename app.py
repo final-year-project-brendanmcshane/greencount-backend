@@ -305,17 +305,46 @@ def signup():
         return jsonify({"error": str(e)}), 400
 
 
+import json
+
 @app.route('/auth/login', methods=['POST'])
 def login():
-    data = request.get_json()
     try:
+        data = request.get_json()
+        print("Received raw data:", request.data)  # Log raw request data
+        print("Parsed JSON data:", data)  # Log parsed JSON
+
+        if not data or 'email' not in data or 'password' not in data:
+            print("Error: Missing email or password")
+            return jsonify({"error": "Missing email or password"}), 400
+
+        # Call Supabase authentication
         response = supabase.auth.sign_in_with_password({
             "email": data['email'],
             "password": data['password']
         })
-        return jsonify(response), 200
+
+        # Convert the response to JSON manually
+        session_data = {
+            "access_token": response.session.access_token,
+            "refresh_token": response.session.refresh_token,
+            "expires_in": response.session.expires_in,
+            "user": {
+                "id": response.user.id,
+                "email": response.user.email,
+                "role": response.user.role
+            }
+        }
+
+        print("Returning JSON response:", session_data)  # Debugging print
+
+        return jsonify(session_data), 200  # Ensure JSON-serializable response
+
     except Exception as e:
+        print("Exception occurred:", str(e))
         return jsonify({"error": str(e)}), 400
+
+
 
 
 if __name__ == '__main__':
