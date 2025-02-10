@@ -193,37 +193,52 @@ def model_info():
 def add_user_emission():
     data = request.get_json()
     auth_header = request.headers.get('Authorization')
-    
-    if not auth_header:
-        return jsonify({"error": "No authorization header"}), 401
-        
-    user_id = auth_header.split(' ')[1]
-    
-    record = {
-        'user_id': user_id,
-        'metric': data['Metric'],
-        'unit': data['Unit'],
-        'value': data['Value']
-    }
-    
-    response = supabase.table('user_emissions').insert(record).execute()
-    return jsonify(response.data), 201
+
+    if not auth_header or not auth_header.startswith('Bearer '):
+        return jsonify({"error": "No or invalid authorization header"}), 401
+
+    try:
+        user = supabase.auth.get_user(auth_header.split(' ')[1])  # Validate token
+        user_id = user.user.id
+
+        # Insert emission record with user_id
+        record = {
+            'user_id': user_id,
+            'metric': data['Metric'],
+            'unit': data['Unit'],
+            'value': data['Value']
+        }
+
+        response = supabase.table('user_emissions').insert(record).execute()
+        return jsonify(response.data), 201
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
 
 @app.route('/get-user-emissions', methods=['GET'])
 def get_user_emissions():
     auth_header = request.headers.get('Authorization')
-    
-    if not auth_header:
-        return jsonify({"error": "No authorization header"}), 401
-        
-    user_id = auth_header.split(' ')[1]
-    
-    response = supabase.table('user_emissions')\
-        .select('*')\
-        .eq('user_id', user_id)\
-        .execute()
-        
-    return jsonify(response.data), 200#
+
+    if not auth_header or not auth_header.startswith('Bearer '):
+        return jsonify({"error": "No or invalid authorization header"}), 401
+
+    try:
+        # Validate token and get user ID
+        user = supabase.auth.get_user(auth_header.split(' ')[1])  
+        user_id = user.user.id
+
+        # Fetch emissions for this user
+        response = supabase.table('user_emissions')\
+            .select('*')\
+            .eq('user_id', user_id)\
+            .execute()
+
+        return jsonify(response.data), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 401
+
 
 @app.route('/test-emission', methods=['POST'])
 def test_emission():
