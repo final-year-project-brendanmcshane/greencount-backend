@@ -47,6 +47,33 @@ FOOD_INTENSITY = {
     'dairy': 2.5,  # kg of CO2 per kg of dairy
 }
 
+EMISSION_DATA = [
+    # Cars
+    {'category': 'Car', 'type': 'Diesel', 'unit': 'mile', 'rate': 0.27334},
+    {'category': 'Car', 'type': 'Petrol', 'unit': 'mile', 'rate': 0.26473},
+    {'category': 'Car', 'type': 'Hybrid', 'unit': 'mile', 'rate': 0.20288},
+    
+    # Transport
+    {'category': 'Transport', 'type': 'Taxi', 'unit': 'km', 'rate': 0.14861},
+    {'category': 'Transport', 'type': 'Bus', 'unit': 'km', 'rate': 0.10846},
+    {'category': 'Transport', 'type': 'Rail', 'unit': 'km', 'rate': 0.03546},
+    {'category': 'Transport', 'type': 'Flight', 'unit': 'km', 'rate': 0.27257},
+    
+    # Energy
+    {'category': 'Energy', 'type': 'Electricity', 'unit': 'kWh', 'rate': 0.20705},
+    
+    # Working
+    {'category': 'Working', 'type': 'Office', 'unit': 'hour', 'rate': 0.03144},
+    {'category': 'Working', 'type': 'Home', 'unit': 'hour', 'rate': 0.33378},
+    
+    # Accommodation
+    {'category': 'Accommodation', 'type': 'Hotel-UK', 'unit': 'night', 'rate': 10.40000},
+    {'category': 'Accommodation', 'type': 'Hotel-London', 'unit': 'night', 'rate': 11.50000},
+    
+    # Motorbike
+    {'category': 'Motorbike', 'type': 'Average', 'unit': 'km', 'rate': 0.11367}
+]
+
 
 @app.route('/')
 def home():
