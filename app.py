@@ -236,7 +236,7 @@ def add_user_emission():
             'value': data['Value']
         }
 
-        response = supabase.table('user_emissions').insert(record).execute()
+        response = supabase.table('user_emissions_v2').insert(record).execute()
         return jsonify(response.data), 201
 
     except Exception as e:
@@ -256,7 +256,7 @@ def get_user_emissions():
         user_id = user.user.id
 
         # Fetch emissions for this user
-        response = supabase.table('user_emissions')\
+        response = supabase.table('user_emissions_v2')\
             .select('*')\
             .eq('user_id', user_id)\
             .execute()
