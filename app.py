@@ -219,25 +219,36 @@ def model_info():
 @app.route('/add-user-emission', methods=['POST'])
 def add_user_emission():
     data = request.get_json()
+    print("Received data:", data)  # Debug print
     auth_header = request.headers.get('Authorization')
 
     if not auth_header or not auth_header.startswith('Bearer '):
         return jsonify({"error": "No or invalid authorization header"}), 401
 
     try:
-        user = supabase.auth.get_user(auth_header.split(' ')[1])  # Validate token
+        user = supabase.auth.get_user(auth_header.split(' ')[1])
         user_id = user.user.id
 
-        # Insert emission record with user_id
+        # Check required fields
+        required_fields = ['category', 'type', 'value']
+        for field in required_fields:
+            if field not in data:
+                return jsonify({"error": f"Missing required field: {field}"}), 400
+
         record = {
             'user_id': user_id,
-            'metric': data['Metric'],
-            'unit': data['Unit'],
-            'value': data['Value']
+            'category': data['category'],
+            'type': data['type'],
+            'value': data['value']
         }
 
+        print("Sending to Supabase:", record)  # Debug print
         response = supabase.table('user_emissions_v2').insert(record).execute()
         return jsonify(response.data), 201
+
+    except Exception as e:
+        print("Error:", str(e))  # Debug print
+        return jsonify({"error": str(e)}), 400
 
     except Exception as e:
         return jsonify({"error": str(e)}), 400
