@@ -219,7 +219,7 @@ def model_info():
 @app.route('/add-user-emission', methods=['POST'])
 def add_user_emission():
     data = request.get_json()
-    print("Received data:", data)  # Debug print
+    print("1. Received data:", data)
     auth_header = request.headers.get('Authorization')
 
     if not auth_header or not auth_header.startswith('Bearer '):
@@ -229,28 +229,36 @@ def add_user_emission():
         user = supabase.auth.get_user(auth_header.split(' ')[1])
         user_id = user.user.id
 
-        # Check required fields
-        required_fields = ['category', 'type', 'value']
-        for field in required_fields:
-            if field not in data:
-                return jsonify({"error": f"Missing required field: {field}"}), 400
+        # Get emission rate from EMISSION_DATA
+        emission_info = next(
+            (item for item in EMISSION_DATA 
+             if item['category'] == data['category'] and item['type'] == data['type']),
+            None
+        )
+        print("2. Found emission_info:", emission_info)
+
+        if not emission_info:
+            return jsonify({"error": "Invalid category/type combination"}), 400
+
+        # Calculate emissions using rate
+        calculated_emissions = data['value'] * emission_info['rate']
+        print("3. Calculated emissions:", calculated_emissions)
 
         record = {
             'user_id': user_id,
             'category': data['category'],
             'type': data['type'],
-            'value': data['value']
+            'value': data['value'],
+            'unit': emission_info['unit'],
+            'emissions': calculated_emissions
         }
+        print("4. Final record:", record)
 
-        print("Sending to Supabase:", record)  # Debug print
         response = supabase.table('user_emissions_v2').insert(record).execute()
         return jsonify(response.data), 201
 
     except Exception as e:
-        print("Error:", str(e))  # Debug print
-        return jsonify({"error": str(e)}), 400
-
-    except Exception as e:
+        print("Error:", str(e))
         return jsonify({"error": str(e)}), 400
 
 
