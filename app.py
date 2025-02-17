@@ -265,25 +265,23 @@ def add_user_emission():
 @app.route('/get-user-emissions', methods=['GET'])
 def get_user_emissions():
     auth_header = request.headers.get('Authorization')
-
     if not auth_header or not auth_header.startswith('Bearer '):
-        return jsonify({"error": "No or invalid authorization header"}), 401
+        return jsonify({"error": "Unauthorized"}), 401
+
+    token = auth_header.split(' ')[1]
 
     try:
-        # Validate token and get user ID
-        user = supabase.auth.get_user(auth_header.split(' ')[1])  
-        user_id = user.user.id
+        user = supabase.auth.get_user(token)
+        user_id = user.user.id  # Get the logged-in user's ID
 
-        # Fetch emissions for this user
-        response = supabase.table('user_emissions_v2')\
-            .select('*')\
-            .eq('user_id', user_id)\
-            .execute()
-
-        return jsonify(response.data), 200
+        # ✅ Fetch ONLY emissions where user_id matches the logged-in user
+        response = supabase.table('user_emissions_v2').select('*').eq('user_id', user_id).execute()
+        return jsonify(response.data)  # This ensures only their emissions are returned
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 401
+        print("Error in authentication:", str(e))
+        return jsonify({"error": "Invalid or expired token"}), 401
+
 
 
 @app.route('/test-emission', methods=['POST'])
