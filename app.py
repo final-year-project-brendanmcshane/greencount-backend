@@ -5,22 +5,23 @@ from dotenv import load_dotenv
 import os
 import uuid 
 import re  
+import requests
+import openai
 
 # Environment variables from .env file
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/*": {"origins": ["http://localhost:4200"]}}, supports_credentials=True)
+
 
 # Supabase URL and KEY from the environment
 SUPABASE_URL = os.getenv('SUPABASE_URL')
 SUPABASE_KEY = os.getenv('SUPABASE_KEY')
 SUPABASE_SERVICE_KEY = os.getenv('SUPABASE_SERVICE_KEY')
 
-#Hugging Face AI variables and keys
-HUGGING_FACE_API_KEY = os.getenv("HUGGING_ACCESS_TOKEN")
-HUGGING_FACE_MODEL = "google/gemma-7b"
-HUGGING_FACE_API_URL = f"https://api-inference.huggingface.co/models/{HUGGING_FACE_MODEL}"
+OPENAI_API_KEY = os.getenv("OPEN_API_KEY")
+
 
 
 # Initializes Supabase client# Initialize Supabase client
@@ -411,32 +412,35 @@ def login():
         print("Exception occurred:", str(e))
         return jsonify({"error": str(e)}), 400
 
+import openai
+
 @app.route('/chat', methods=['POST'])
 def chat():
-    """ AI chatbot route to answer emissions-related questions """
+    """Handles chat messages from frontend and sends them to OpenAI"""
     data = request.get_json()
     user_message = data.get("message", "").strip()
 
     if not user_message:
         return jsonify({"error": "Message cannot be empty"}), 400
 
-    headers = {"Authorization": f"Bearer {HUGGING_FACE_API_KEY}"}
-    payload = {"inputs": user_message}
-
     try:
-        response = requests.post(HUGGING_FACE_API_URL, headers=headers, json=payload)
-        response_json = response.json()
+        client = openai.OpenAI(api_key=OPENAI_API_KEY)  # ✅ Correct way in openai>=1.0.0
 
-        # Extracts AI-generated response
-        if isinstance(response_json, list) and "generated_text" in response_json[0]:
-            answer = response_json[0]["generated_text"]
-        else:
-            answer = "Sorry, I couldn't generate a response."
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "system", "content": "You are an AI assistant that helps users understand their carbon footprint."},
+                      {"role": "user", "content": user_message}]
+        )
 
-        return jsonify({"response": answer})
+        ai_response = response.choices[0].message.content  # ✅ Updated way to access response
+
+        return jsonify({"response": ai_response})
 
     except Exception as e:
+        print("🔥 Flask API Error:", str(e))  # Logs error in terminal
         return jsonify({"error": str(e)}), 500
+
+
 
 
 if __name__ == '__main__':
