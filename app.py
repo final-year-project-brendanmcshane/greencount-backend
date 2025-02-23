@@ -19,7 +19,7 @@ SUPABASE_SERVICE_KEY = os.getenv('SUPABASE_SERVICE_KEY')
 
 #Hugging Face AI variables and keys
 HUGGING_FACE_API_KEY = os.getenv("HUGGING_ACCESS_TOKEN")
-HUGGING_FACE_API_URL = "https://api-inference.huggingface.co/models/google/gemma-7b"
+HUGGING_FACE_MODEL = "google/gemma-7b"
 HUGGING_FACE_API_URL = f"https://api-inference.huggingface.co/models/{HUGGING_FACE_MODEL}"
 
 
