@@ -3,25 +3,33 @@ from flask_cors import CORS
 from supabase import create_client, Client
 from dotenv import load_dotenv
 import os
+import uuid 
+import re  
 
-# Load environment variables from .env file
+# Environment variables from .env file
 load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
 
-# Get Supabase URL and KEY from the environment
+# Supabase URL and KEY from the environment
 SUPABASE_URL = os.getenv('SUPABASE_URL')
 SUPABASE_KEY = os.getenv('SUPABASE_KEY')
 SUPABASE_SERVICE_KEY = os.getenv('SUPABASE_SERVICE_KEY')
 
-# Initialize Supabase client# Initialize Supabase client
+#Hugging Face AI variables and keys
+HUGGING_FACE_API_KEY = os.getenv("HUGGING_ACCESS_TOKEN")
+HUGGING_FACE_API_URL = "https://api-inference.huggingface.co/models/google/gemma-7b"
+HUGGING_FACE_API_URL = f"https://api-inference.huggingface.co/models/{HUGGING_FACE_MODEL}"
+
+
+# Initializes Supabase client# Initialize Supabase client
 supabase: Client = create_client(
     SUPABASE_URL, 
     os.getenv('SUPABASE_SERVICE_KEY')  # Changed from SUPABASE_KEY
 )
 
-# Conversion rates (ensure they are consistent)
+# Conversion rates 
 CONVERSION_RATES = {
     'kwh_to_mwh': 0.001,  # Lowercase conversion key
     'liters_to_gallons': 0.264172,
@@ -82,7 +90,7 @@ def home():
 @app.route('/convert', methods=['POST'])
 def convert_data():
     data = request.get_json()
-    print(f"Received payload: {data}")  # Log the received payload
+    print(f"Received payload: {data}")  # Logs the received payload
 
     # Validate 'Metric'
     if 'Metric' not in data or not isinstance(data['Metric'], str) or data['Metric'].strip() == '':
@@ -96,10 +104,10 @@ def convert_data():
     if 'TargetUnit' not in data or not isinstance(data['TargetUnit'], str) or data['TargetUnit'].strip() == '':
         return jsonify({"error": "Invalid or missing 'TargetUnit' field"}), 400
 
-    # Normalize and extract inputs
-    metric = data['Metric'].strip().lower()  # Normalize to lowercase (THIS LINE WAS ADDED)
+    # Normalizes and extracts inputs
+    metric = data['Metric'].strip().lower()  # Normalizes to lowercase (THIS LINE WAS ADDED)
     value = data['Value']
-    target_unit = data['TargetUnit'].strip().lower()  # Normalize to lowercase
+    target_unit = data['TargetUnit'].strip().lower()  # Normalizes to lowercase
 
     # Construct conversion key
     conversion_key = f"{metric}_to_{target_unit}"
@@ -115,7 +123,7 @@ def convert_data():
     converted_value = value * conversion_rate
     print(f"Conversion successful. Original: {value}, Converted: {converted_value}")
 
-    # Calculate CO2 emissions if the metric is energy consumption
+    # Calculates CO2 emissions if the metric is energy consumption
     if metric in CARBON_INTENSITY:
         carbon_intensity = CARBON_INTENSITY[metric]
         emissions = value * carbon_intensity  # Calculate CO2 emissions in tons
@@ -136,7 +144,7 @@ def convert_data():
 def add_data():
     data = request.get_json()
     
-    # Validate fields
+    # Validates fields
     if 'Metric' not in data or not isinstance(data['Metric'], str) or data['Metric'].strip() == '':
         return jsonify({"error": "Invalid or missing 'Metric' field. It should be a non-empty string."}), 400
     if 'Unit' not in data or not isinstance(data['Unit'], str) or data['Unit'].strip() == '':
@@ -144,7 +152,7 @@ def add_data():
     if 'Value' not in data or not isinstance(data['Value'], (int, float)):
         return jsonify({"error": "Invalid or missing 'Value' field. It should be a number."}), 400
     
-    # Insert data
+    # Inserts data
     response = supabase.table('test_table').insert(data).execute()
     return jsonify(response.data), 201
 
@@ -162,7 +170,7 @@ def summarize_data():
     response = supabase.table('test_table').select('*').execute()
     records = response.data
     
-    # Filter and summarize
+    # Filters and summarizes
     filtered = [record for record in records if record['Metric'].lower() == metric.lower()]
     total = sum(record['Value'] for record in filtered)
     count = len(filtered)
@@ -180,15 +188,15 @@ def food_impact():
     data = request.get_json()
     print(f"Received payload: {data}")
 
-    # Validate 'Food Item'
+    # Validates 'Food Item'
     if 'FoodItem' not in data or not isinstance(data['FoodItem'], str) or data['FoodItem'].strip() == '':
         return jsonify({"error": "Invalid or missing 'FoodItem' field"}), 400
 
-    # Validate 'Weight'
+    # Validates 'Weight'
     if 'Weight' not in data or not isinstance(data['Weight'], (int, float)) or data['Weight'] <= 0:
         return jsonify({"error": "Invalid or missing 'Weight' field"}), 400
 
-    # Normalize food item input
+    # Normalizes food item input
     food_item = data['FoodItem'].strip().lower()  # Normalize to lowercase
     weight = data['Weight']
 
@@ -197,7 +205,7 @@ def food_impact():
     if food_impact is None:
         return jsonify({"error": f"Unsupported food item: {food_item}"}), 400
 
-    # Calculate CO2 emissions
+    # Calculates CO2 emissions
     emissions = weight * food_impact  # CO2 emissions in kg
     print(f"Calculated emissions: {emissions} kg of CO2")
 
@@ -229,7 +237,7 @@ def add_user_emission():
         user = supabase.auth.get_user(auth_header.split(' ')[1])
         user_id = user.user.id
 
-        # Get emission rate from EMISSION_DATA
+        # Gets emission rate from EMISSION_DATA
         emission_info = next(
             (item for item in EMISSION_DATA 
              if item['category'] == data['category'] and item['type'] == data['type']),
@@ -240,7 +248,7 @@ def add_user_emission():
         if not emission_info:
             return jsonify({"error": "Invalid category/type combination"}), 400
 
-        # Calculate emissions using rate
+        # Calculates emissions using rate
         calculated_emissions = data['value'] * emission_info['rate']
         print("3. Calculated emissions:", calculated_emissions)
 
@@ -274,7 +282,7 @@ def get_user_emissions():
         user = supabase.auth.get_user(token)
         user_id = user.user.id  # Get the logged-in user's ID
 
-        # ✅ Fetch ONLY emissions where user_id matches the logged-in user
+        # ✅ Fetches ONLY emissions where user_id matches the logged-in user
         response = supabase.table('user_emissions_v2').select('*').eq('user_id', user_id).execute()
         return jsonify(response.data)  # This ensures only their emissions are returned
 
@@ -301,7 +309,7 @@ def test_emission():
         return jsonify({"error": str(e)})
 
 
-import uuid  # Add this at the top with other imports
+
 
 @app.route('/test-db', methods=['GET'])
 def test_db():
@@ -310,17 +318,17 @@ def test_db():
         test_user_id = str(uuid.uuid4())
         
         test_data = {
-            'user_id': test_user_id,  # Using proper UUID
+            'user_id': test_user_id,  # Uses proper UUID
             'metric': 'TestMetric',
             'unit': 'TestUnit',
             'value': 100
         }
         
-        # Try to insert
+        # Tries to insert
         insert_response = supabase.table('user_emissions').insert(test_data).execute()
         print("Insert response:", insert_response.data)
         
-        # Try to fetch
+        # Tries to fetch
         fetch_response = supabase.table('user_emissions').select("*").execute()
         print("Fetch response:", fetch_response.data)
         
@@ -335,7 +343,7 @@ def test_db():
         return jsonify({"error": str(e)})
 
 
-import re  # Import for email validation
+
 
 @app.route('/auth/signup', methods=['POST'])
 def signup():
@@ -370,20 +378,20 @@ import json
 def login():
     try:
         data = request.get_json()
-        print("Received raw data:", request.data)  # Log raw request data
-        print("Parsed JSON data:", data)  # Log parsed JSON
+        print("Received raw data:", request.data)  # Logs raw request data
+        print("Parsed JSON data:", data)  # Logs parsed JSON
 
         if not data or 'email' not in data or 'password' not in data:
             print("Error: Missing email or password")
             return jsonify({"error": "Missing email or password"}), 400
 
-        # Call Supabase authentication
+        # Calls Supabase authentication
         response = supabase.auth.sign_in_with_password({
             "email": data['email'],
             "password": data['password']
         })
 
-        # Convert the response to JSON manually
+        # Converts the response to JSON manually
         session_data = {
             "access_token": response.session.access_token,
             "refresh_token": response.session.refresh_token,
@@ -397,13 +405,38 @@ def login():
 
         print("Returning JSON response:", session_data)  # Debugging print
 
-        return jsonify(session_data), 200  # Ensure JSON-serializable response
+        return jsonify(session_data), 200  # Ensures JSON-serializable response
 
     except Exception as e:
         print("Exception occurred:", str(e))
         return jsonify({"error": str(e)}), 400
 
+@app.route('/chat', methods=['POST'])
+def chat():
+    """ AI chatbot route to answer emissions-related questions """
+    data = request.get_json()
+    user_message = data.get("message", "").strip()
 
+    if not user_message:
+        return jsonify({"error": "Message cannot be empty"}), 400
+
+    headers = {"Authorization": f"Bearer {HUGGING_FACE_API_KEY}"}
+    payload = {"inputs": user_message}
+
+    try:
+        response = requests.post(HUGGING_FACE_API_URL, headers=headers, json=payload)
+        response_json = response.json()
+
+        # Extracts AI-generated response
+        if isinstance(response_json, list) and "generated_text" in response_json[0]:
+            answer = response_json[0]["generated_text"]
+        else:
+            answer = "Sorry, I couldn't generate a response."
+
+        return jsonify({"response": answer})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 if __name__ == '__main__':
