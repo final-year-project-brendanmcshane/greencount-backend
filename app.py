@@ -379,8 +379,8 @@ import json
 def login():
     try:
         data = request.get_json()
-        print("Received raw data:", request.data)  # Logs raw request data
-        print("Parsed JSON data:", data)  # Logs parsed JSON
+        # print("Received raw data:", request.data)  # Logs raw request data
+        # print("Parsed JSON data:", data)  # Logs parsed JSON
 
         if not data or 'email' not in data or 'password' not in data:
             print("Error: Missing email or password")
@@ -404,7 +404,7 @@ def login():
             }
         }
 
-        print("Returning JSON response:", session_data)  # Debugging print
+       # print("Returning JSON response:", session_data)  # Debugging print
 
         return jsonify(session_data), 200  # Ensures JSON-serializable response
 
