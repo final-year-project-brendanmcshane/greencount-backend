@@ -8,7 +8,6 @@ import re
 import requests
 import openai
 import json
-import openai
 # Imports above
 
 # Environment variables from .env file
@@ -94,7 +93,6 @@ def home():
 @app.route('/convert', methods=['POST'])
 def convert_data():
     data = request.get_json()
-    print(f"Received payload: {data}")  # Logs the received payload
 
     # Validate 'Metric'
     if 'Metric' not in data or not isinstance(data['Metric'], str) or data['Metric'].strip() == '':
@@ -115,23 +113,19 @@ def convert_data():
 
     # Construct conversion key
     conversion_key = f"{metric}_to_{target_unit}"
-    print(f"Generated conversion_key: {conversion_key}")
 
     # Lookup conversion rate
     conversion_rate = CONVERSION_RATES.get(conversion_key)
     if conversion_rate is None:
-        print(f"Error: Conversion rate not found for key: {conversion_key}")
         return jsonify({"error": f"Unsupported conversion: {conversion_key}"}), 400
 
     # Perform conversion
     converted_value = value * conversion_rate
-    print(f"Conversion successful. Original: {value}, Converted: {converted_value}")
 
     # Calculates CO2 emissions if the metric is energy consumption
     if metric in CARBON_INTENSITY:
         carbon_intensity = CARBON_INTENSITY[metric]
         emissions = value * carbon_intensity  # Calculate CO2 emissions in tons
-        print(f"Calculated emissions: {emissions} tons of CO2")
     else:
         emissions = None
 
@@ -190,7 +184,6 @@ def summarize_data():
 @app.route('/food-impact', methods=['POST'])
 def food_impact():
     data = request.get_json()
-    print(f"Received payload: {data}")
 
     # Validates 'Food Item'
     if 'FoodItem' not in data or not isinstance(data['FoodItem'], str) or data['FoodItem'].strip() == '':
@@ -211,7 +204,6 @@ def food_impact():
 
     # Calculates CO2 emissions
     emissions = weight * food_impact  # CO2 emissions in kg
-    print(f"Calculated emissions: {emissions} kg of CO2")
 
     return jsonify({
         "FoodItem": data['FoodItem'],
@@ -231,7 +223,6 @@ def model_info():
 @app.route('/add-user-emission', methods=['POST'])
 def add_user_emission():
     data = request.get_json()
-    print("1. Received data:", data)
     auth_header = request.headers.get('Authorization')
 
     if not auth_header or not auth_header.startswith('Bearer '):
@@ -247,14 +238,12 @@ def add_user_emission():
              if item['category'] == data['category'] and item['type'] == data['type']),
             None
         )
-        print("2. Found emission_info:", emission_info)
 
         if not emission_info:
             return jsonify({"error": "Invalid category/type combination"}), 400
 
         # Calculates emissions using rate
         calculated_emissions = data['value'] * emission_info['rate']
-        print("3. Calculated emissions:", calculated_emissions)
 
         record = {
             'user_id': user_id,
@@ -264,13 +253,11 @@ def add_user_emission():
             'unit': emission_info['unit'],
             'emissions': calculated_emissions
         }
-        print("4. Final record:", record)
 
         response = supabase.table('user_emissions_v2').insert(record).execute()
         return jsonify(response.data), 201
 
     except Exception as e:
-        print("Error:", str(e))
         return jsonify({"error": str(e)}), 400
 
 
@@ -291,7 +278,6 @@ def get_user_emissions():
         return jsonify(response.data)  # This ensures only their emissions are returned
 
     except Exception as e:
-        print("Error in authentication:", str(e))
         return jsonify({"error": "Invalid or expired token"}), 401
 
 
@@ -306,10 +292,8 @@ def test_emission():
             'unit': data.get('Unit'), 
             'value': data.get('Value')
         }).execute()
-        print("Inserted data:", response.data)
         return jsonify({"success": True, "data": response.data})
     except Exception as e:
-        print("Error:", str(e))
         return jsonify({"error": str(e)})
 
 
@@ -330,11 +314,9 @@ def test_db():
         
         # Tries to insert
         insert_response = supabase.table('user_emissions').insert(test_data).execute()
-        print("Insert response:", insert_response.data)
         
         # Tries to fetch
         fetch_response = supabase.table('user_emissions').select("*").execute()
-        print("Fetch response:", fetch_response.data)
         
         return jsonify({
             "message": "Database test successful",
@@ -343,7 +325,6 @@ def test_db():
         })
         
     except Exception as e:
-        print("Error:", str(e))
         return jsonify({"error": str(e)})
 
 
@@ -382,11 +363,8 @@ def signup():
 def login():
     try:
         data = request.get_json()
-        # print("Received raw data:", request.data)  # Logs raw request data
-        # print("Parsed JSON data:", data)  # Logs parsed JSON
 
         if not data or 'email' not in data or 'password' not in data:
-            print("Error: Missing email or password")
             return jsonify({"error": "Missing email or password"}), 400
 
         # Calls Supabase authentication
@@ -407,12 +385,11 @@ def login():
             }
         }
 
-       # print("Returning JSON response:", session_data)  # Debugging print
+       
 
         return jsonify(session_data), 200  # Ensures JSON-serializable response
 
     except Exception as e:
-        print("Exception occurred:", str(e))
         return jsonify({"error": str(e)}), 400
 
 
@@ -440,14 +417,13 @@ def chat():
         return jsonify({"response": ai_response})
 
     except Exception as e:
-        print("🔥 Flask API Error:", str(e))  # Logs error in terminal
         return jsonify({"error": str(e)}), 500
 
 
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run()
 
 
 
