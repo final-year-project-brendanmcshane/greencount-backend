@@ -67,3 +67,36 @@ This is the Flask-based backend for the Green Count app. It handles carbon emiss
    flask run
 ```
 
+## 🧩 How to Obtain API Keys
+
+To run this backend with your own API keys, follow these steps:
+
+### 1. **Get your Supabase API Keys**  
+Supabase is used for authentication and data storage.
+
+1. Go to the [Supabase website](https://supabase.io/).
+2. Sign up or log in to your Supabase account.
+3. Create a new project (or use an existing one).
+4. Navigate to your project settings and find the **API** section.
+5. Copy your **SUPABASE_URL** and **SUPABASE_KEY**.
+
+You can also get your **SUPABASE_SERVICE_KEY** from the same settings page, which is required for backend operations.
+
+### 2. **Get your OpenAI API Key**  
+OpenAI is used to generate AI-powered suggestions.
+
+1. Go to the [OpenAI website](https://platform.openai.com/).
+2. Sign up or log in to your OpenAI account.
+3. Go to your **API** section under your user settings.
+4. Copy your **OPENAI_API_KEY**.
+
+### 3. **Configure your `.env` File**  
+Create a `.env` file in the root of your project with the following keys:
+
+
+SUPABASE_URL=your_supabase_url  
+SUPABASE_KEY=your_supabase_key  
+SUPABASE_SERVICE_KEY=your_supabase_service_key  
+OPENAI_API_KEY=your_openai_key
+
+
