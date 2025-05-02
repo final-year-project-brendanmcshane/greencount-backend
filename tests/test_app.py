@@ -1,40 +1,95 @@
 import sys
 import os
 import pytest
-from flask import Flask
 
-# Add the project root directory to sys.path
+
+import supabase
+import supabase._sync.client as _sbmod
+
+class DummyClient:
+    def __init__(self, *args, **kwargs):
+        # ignore url/key args
+        self._last_op = None
+
+    def table(self, name):
+        # ignore table name
+        return self
+
+    def insert(self, data):
+        self._last_op = 'insert'
+        return self
+
+    def select(self, *args, **kwargs):
+        self._last_op = 'select'
+        return self
+
+    def execute(self):
+        class Result:
+            pass
+        res = Result()
+       
+        if self._last_op == 'insert':
+            res.data = [{'id': 1}]
+        
+        else:
+            res.data = []
+        return res
+
+    
+    @property
+    def auth(self):
+        class AuthStub:
+            def get_user(self, token):
+                
+                class U: user = type('u', (), {'id': 'stub'})()
+                return U()
+            def sign_up(self, data): return {}
+            def sign_in_with_password(self, data): 
+                class Sess: access_token = 'x'; refresh_token = 'y'; expires_in = 0
+                class U: id='u'; email='e'; role='r'
+                return type('R', (), {'session': Sess(), 'user': U()})()
+        return AuthStub()
+
+# Monkey-patch both entrypoints:
+_sbmod.create_client = DummyClient
+supabase.create_client = DummyClient
+
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from app import app
 
-from app import app  # Import your Flask app
 
 @pytest.fixture
 def client():
-    """Fixture to set up the test client"""
+    """Set up Flask test client."""
     app.config['TESTING'] = True
     with app.test_client() as client:
         yield client
 
+
 def test_home(client):
-    """Test the home route"""
-    response = client.get('/')
-    assert response.status_code == 200
-    assert response.json == {'message': 'Welcome to the GreenCount API!'}
+    """GET / should return welcome message."""
+    r = client.get('/')
+    assert r.status_code == 200
+    assert r.json == {'message': 'Welcome to the GreenCount API!'}
+
 
 def test_add_data(client):
-    """Test adding data to the database"""
+    """POST /add should return a list with an 'id' key."""
     payload = {
         "Name": "Electricity",
         "Metric": "Usage",
         "Unit": "kWh",
         "Value": 500.0
     }
-    response = client.post('/add', json=payload)
-    assert response.status_code == 201
-    assert "id" in response.json[0]
+    r = client.post('/add', json=payload)
+    assert r.status_code == 201
+    assert isinstance(r.json, list)
+    assert "id" in r.json[0]
+
 
 def test_get_data(client):
-    """Test fetching data from the database"""
-    response = client.get('/get')
-    assert response.status_code == 200
-    assert isinstance(response.json, list)  # Ensure it returns a list
+    """GET /get should return a list."""
+    r = client.get('/get')
+    assert r.status_code == 200
+    assert isinstance(r.json, list)
