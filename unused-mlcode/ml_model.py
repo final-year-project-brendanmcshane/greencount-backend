@@ -1,3 +1,6 @@
+#BELOW IS JUST SAMPLE CODE I DID NOT IMPLEMENT INTO THIS PROJECT
+
+
 import pandas as pd
 import numpy as np
 from sklearn.linear_model import LinearRegression
@@ -145,11 +148,11 @@ def analyze_uk_emissions(file_path):
     try:
         df = pd.read_csv(file_path)
 
-        # Strip any leading/trailing spaces from column names
+        # Strips any leading/trailing spaces from column names
         df.columns = df.columns.str.strip()
 
         print("✅ Dataset loaded successfully!")
-        print("\n📝 Column Names:", df.columns.tolist())  # Print column names for reference
+        print("\n📝 Column Names:", df.columns.tolist())  # Prints column names for reference
 
         print("\n🔍 Unique Activities (first 20):")
         print(df['Activity'].unique()[:20])  # Print first 20 unique activities to explore data

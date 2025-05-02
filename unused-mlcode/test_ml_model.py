@@ -1,3 +1,5 @@
+#BELOW IS JUST SAMPLE CODE I DID NOT IMPLEMENT INTO THIS PROJECT
+
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -56,14 +58,14 @@ def create_training_dataset():
                 'unit': item['unit'],
                 'amount': amount,
                 'rate': item['rate'],
-                'emissions': amount * item['rate']  # Calculate actual emissions
+                'emissions': amount * item['rate']  # Calculates actual emissions
             })
     
     return pd.DataFrame(training_data)
 
 def train_model(df):
     """Train the ML model on the emissions data"""
-    # Encode categorical variables
+    # Encodes categorical variables
     le_category = LabelEncoder()
     le_type = LabelEncoder()
     le_unit = LabelEncoder()
@@ -73,18 +75,18 @@ def train_model(df):
     df['type_encoded'] = le_type.fit_transform(df['type'])
     df['unit_encoded'] = le_unit.fit_transform(df['unit'])
     
-    # Prepare features (X) and target (y)
+    # Prepares features (X) and target (y)
     X = df[['category_encoded', 'type_encoded', 'unit_encoded', 'amount', 'rate']]
     y = df['emissions']
     
-    # Split the data
+    # Splits the data
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     
-    # Train model
+    # Trains model
     model = RandomForestRegressor(n_estimators=100, random_state=42)
     model.fit(X_train, y_train)
     
-    # Print model performance
+    # Prints model performance
     train_score = model.score(X_train, y_train)
     test_score = model.score(X_test, y_test)
     print(f"\nModel R² score (training): {train_score:.4f}")
@@ -94,7 +96,7 @@ def train_model(df):
 
 def predict_emissions(model, le_category, le_type, le_unit, category, type_, amount):
     """Predict emissions using the trained model"""
-    # Get the unit based on category
+    # Gets the unit based on category
     unit_mapping = {
         'Car': 'mile',
         'Transport': 'km',
@@ -105,7 +107,7 @@ def predict_emissions(model, le_category, le_type, le_unit, category, type_, amo
     }
     unit = unit_mapping[category]
     
-    # Get the rate for this category/type combination
+    # Gets the rate for this category/type combination
     rates = {
         ('Car', 'Diesel'): 0.27334,
         ('Car', 'Petrol'): 0.26473,
@@ -123,12 +125,12 @@ def predict_emissions(model, le_category, le_type, le_unit, category, type_, amo
     }
     rate = rates[(category, type_)]
     
-    # Encode inputs
+    # Encodes inputs
     category_encoded = le_category.transform([category])[0]
     type_encoded = le_type.transform([type_])[0]
     unit_encoded = le_unit.transform([unit])[0]
     
-    # Make prediction
+    # Makes prediction
     X_pred = [[category_encoded, type_encoded, unit_encoded, amount, rate]]
     prediction = model.predict(X_pred)[0]
     
@@ -175,7 +177,7 @@ if __name__ == "__main__":
             
             amount = float(input(f"Enter amount ({df[df['category'] == category]['unit'].iloc[0]}): "))
             
-            # Calculate emissions
+            # Calculates emissions
             ml_prediction = predict_emissions(model, le_category, le_type, le_unit, category, type_, amount)
             direct_calculation = amount * df[(df['category'] == category) & (df['type'] == type_)]['rate'].iloc[0]
             

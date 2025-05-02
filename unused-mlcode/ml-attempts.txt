@@ -1,0 +1,2 @@
+In semester 1 I was deciding whether or not to incorporate machine learning into thius project. Ultimately I decide against it due to it not really making sense to use over hard data from UK on emissions. 
+Instead I decided to use a ChatGPT API that is prompted to advice users on their carbopn footprint.
