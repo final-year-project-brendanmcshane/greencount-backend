@@ -94,12 +94,15 @@ OpenAI is used to generate AI-powered suggestions.
 Create a `.env` file in the root of your project with the following keys:
 
 
-SUPABASE_URL=your_supabase_url  
-SUPABASE_KEY=your_supabase_key  
-SUPABASE_SERVICE_KEY=your_supabase_service_key  
-OPENAI_API_KEY=your_openai_key
+SUPABASE_URL=your_supabase_url  # Replace with your Supabase URL
+SUPABASE_KEY=your_supabase_key  # Replace with your Supabase key
+SUPABASE_SERVICE_KEY=your_supabase_service_key  # Replace with your Supabase service key
+OPENAI_API_KEY=your_openai_key # Replace with your OpenAI API key
 
-### Screencast link:
-https://www.youtube.com/watch?v=UW_Tw9hZBjc
+### Screencast :
+For a quick walkthrough of how the Green Count app works, check out this screencast where I demonstrate using the website:
+
+[Watch the Green Count Screencast](https://www.youtube.com/watch?v=UW_Tw9hZBjc)
+
 
 
