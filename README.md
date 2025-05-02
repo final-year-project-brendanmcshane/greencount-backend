@@ -99,4 +99,7 @@ SUPABASE_KEY=your_supabase_key
 SUPABASE_SERVICE_KEY=your_supabase_service_key  
 OPENAI_API_KEY=your_openai_key
 
+### Screencast link:
+https://www.youtube.com/watch?v=UW_Tw9hZBjc
+
 
