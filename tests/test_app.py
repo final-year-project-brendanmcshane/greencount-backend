@@ -6,6 +6,7 @@ import pytest
 import supabase
 import supabase._sync.client as _sbmod
 
+# Stub out a Supabase client so tests don’t hit the real backend
 class DummyClient:
     def __init__(self, *args, **kwargs):
         # ignore url/key args
@@ -27,7 +28,7 @@ class DummyClient:
         class Result:
             pass
         res = Result()
-       
+        # Return fake data for insert vs select operations
         if self._last_op == 'insert':
             res.data = [{'id': 1}]
         
@@ -50,7 +51,7 @@ class DummyClient:
                 return type('R', (), {'session': Sess(), 'user': U()})()
         return AuthStub()
 
-# Monkey-patch both entrypoints:
+# Monkey-patch both entrypoints so app.create_client() yields our DummyClient
 _sbmod.create_client = DummyClient
 supabase.create_client = DummyClient
 

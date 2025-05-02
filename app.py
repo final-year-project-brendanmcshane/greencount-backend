@@ -7,6 +7,9 @@ import uuid
 import re  
 import requests
 import openai
+import json
+import openai
+# Imports above
 
 # Environment variables from .env file
 load_dotenv()
@@ -373,7 +376,7 @@ def signup():
         return jsonify({"error": str(e)}), 400
 
 
-import json
+
 
 @app.route('/auth/login', methods=['POST'])
 def login():
@@ -412,7 +415,7 @@ def login():
         print("Exception occurred:", str(e))
         return jsonify({"error": str(e)}), 400
 
-import openai
+
 
 @app.route('/chat', methods=['POST'])
 def chat():
